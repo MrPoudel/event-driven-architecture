@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.7)
 project(test)
 
 set(CMAKE_CXX_STANDARD 17)
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -17,7 +19,10 @@ find_package(Threads REQUIRED)
 # Release MinSizeRel
 set(CMAKE_BUILD_TYPE Debug)
 
-file( GLOB SRCS *.cpp *.h )
+set(SRCS Fault.cpp Fault.h  Thread.cpp Thread.hpp ClassA.hpp)#AnyCallable.hpp)ClassA.hpp 
 
-add_executable(test ${SRCS})
-target_link_libraries(test  ${CMAKE_THREAD_LIBS_INIT})
+add_library(lib ${SRCS})
+target_link_libraries(lib  ${CMAKE_THREAD_LIBS_INIT})
+
+add_executable(test main.cpp)
+target_link_libraries(test lib)

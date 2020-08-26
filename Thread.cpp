@@ -5,17 +5,10 @@
 
 using namespace std;
 
-#define MSG_EXIT_THREAD			1
-#define MSG_POST_USER_DATA		2
-#define MSG_TIMER				3
 
-struct ThreadMsg
-{
-	ThreadMsg(int i, const void* m) { id = i; msg = m; }
-	int id;
-	const void* msg;
-};
-
+#define MSG_EXIT_THREAD			1  // Worker thread should exit once this internal event is fired
+#define MSG_POST_USER_DATA		2  // Corresponds user type data
+#define MSG_TIMER				3  // Correspond to the timer event
 
 //----------------------------------------------------------------------------
 // WorkerThread
@@ -49,7 +42,6 @@ std::thread::id WorkerThread::GetCurrentThreadId()
 	return this_thread::get_id();
 }
 
-
 //----------------------------------------------------------------------------
 // CreateThread
 //----------------------------------------------------------------------------
@@ -66,7 +58,7 @@ void WorkerThread::Process()
     std::thread timerThread(&WorkerThread::TimerThread, this);
 
     while (1)
-    {
+    {        
         ThreadMsg* msg = 0;
         {
             // Wait for a message to be added to the queue
@@ -78,22 +70,21 @@ void WorkerThread::Process()
                 continue;
 
             msg = m_queue.front();
-            m_queue.pop();
+
+            //ThreadMsg* e = m_queue.front();
+            m_queue.pop();            
+            //delete e;
         }
 
         switch (msg->id)
         {
             case MSG_POST_USER_DATA:
-            {
-                ASSERT_TRUE(msg->msg != NULL);
+            {          
 
-                // Convert the ThreadMsg void* data back to a UserData*
-                const UserData* userData = static_cast<const UserData*>(msg->msg);
+               // Dispatch the message to corresponding thread instances!
+                ProcessEvent(msg);
 
-                std::cout << userData->msg.c_str() << " " << userData->year << " on " << THREAD_NAME << endl;
-
-                // Delete dynamic data passed through message queue
-                delete userData;
+                // Delete dynamic data passed through message queue              
                 delete msg;
                 break;
             }
@@ -128,7 +119,7 @@ void WorkerThread::Process()
     }
 }
 
-void WorkerThread::PostMsg(const UserData* data)
+void WorkerThread::PostMsg(const Msg* data)
 {
     ASSERT_TRUE(m_thread);
 

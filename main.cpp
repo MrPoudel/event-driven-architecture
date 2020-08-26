@@ -2,20 +2,26 @@
 #include "Thread.hpp"
 #include <signal.h>
 #include "Fault.h"
+#include "ClassA.hpp"
+
+//#include "ClassB.hpp"
 
 using namespace    std;
 
 // Worker thread instances
-static WorkerThread workerThread1("WorkerThread1");
-static WorkerThread workerThread2("WorkerThread2");
+// static WorkerThread workerThread1("WorkerThread1");
+// static WorkerThread workerThread2("WorkerThread2");
+
+static A threadA("Workerthread3");
 
 static void exitProgram(int32_t interruptSignal)
 {
   std::cout <<"---------- Exiting Application ----------" << std::endl;
   std::cout <<"---------- Exiting Application ----------" << std::endl;
 
-  workerThread1.ExitThread();
-  workerThread2.ExitThread();
+  // workerThread1.ExitThread();
+  // workerThread2.ExitThread();
+  threadA.ExitThread();
 
   exit(interruptSignal);
 }
@@ -23,30 +29,45 @@ static void exitProgram(int32_t interruptSignal)
 int main(void)
 {    
     signal(SIGINT, exitProgram);
-    signal(SIGTERM, exitProgram);
-    
-    // Create worker threads
-    workerThread1.CreateThread();
-    workerThread2.CreateThread();
+    signal(SIGTERM, exitProgram);     
 
     std::cout <<"---------- Exiting Application ----------" << std::endl;
     std::cout <<"---------- Exiting Application ----------" << std::endl;
+
+    // Create worker threads
+    // workerThread1.CreateThread();
+    // workerThread2.CreateThread();
+
+    threadA.CreateThread();
+    // Thread2 should process the can bus read and call the notifyObserver() method which 
+    // Forwards the values read from the CANBus to the WorkerThread2 --> Responsible for 
+    // the MQTT connectivity
+
+    // Events EventsA = new Events{ ID,}
+    //1. WorkerThread1.RegisterObserver(&workerThread2.);
+    //2. WorkerThread1.Events(&EventsA)
+    //3. WorkerThread1.EventHandlers(&EventhandlersA)
 
     // Create message to send to worker thread 1
-    UserData* userData1 = new UserData();
+    UserDataA* userData1 = new UserDataA();
     userData1->msg = "Hello world";
     userData1->year = 2017;
+    userData1->evId = ClassAEventIds::TASKA_MESSAGE_PRINT_LOG; //TASKA_MESSAGE_MAIN_LOOP; //
+
+    DataMsg<UserDataA> *myData = new DataMsg<UserDataA>(userData1);
+
+    threadA.PostMsg(myData);
 
     // Post the message to worker thread 1
-    workerThread1.PostMsg(userData1);
+    //workerThread1.PostMsg(userData1);
 
     // Create message to send to worker thread 2
-    UserData* userData2 = new UserData();
-    userData2->msg = "Goodbye world";
-    userData2->year = 2017;
+    // UserData* userData2 = new UserData();
+    // userData2->msg = "Goodbye world";
+    // userData2->year = 2017;
 
-    // Post the message to worker thread 2
-    workerThread2.PostMsg(userData2);
+    // // Post the message to worker thread 2
+    // workerThread2.PostMsg(userData2);
 
     // Give time for messages processing on worker threads
     this_thread::sleep_for(1s);

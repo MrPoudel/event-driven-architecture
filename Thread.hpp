@@ -7,14 +7,44 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include "Event.h"
+#include <map>
+#include <functional>
 
-struct UserData
-{
-	std::string msg;
-	int year;
+// Message structure of all the working threads should be derived from the Base
+// Msg type! 
+class Msg {
+  public:
+     virtual ~Msg() {}
 };
 
-struct ThreadMsg;
+template<typename PayloadType>
+class DataMsg: public Msg {
+  public:
+    DataMsg(){}
+    DataMsg(PayloadType* pType): pl_(pType) {}
+    virtual ~DataMsg() {}
+
+    PayloadType& getPayload() const
+    {
+    return *pl_;
+    }
+
+  private:
+    PayloadType* pl_;
+};
+
+enum class ClassAEventIds;
+
+#pragma pack(push, 1) 
+struct ThreadMsg
+{
+	ThreadMsg(int i, const void*  m) { id = i; msg = m; }
+	int id;
+	const void* msg;
+};
+#pragma pack(pop)
+
 
 class WorkerThread
 {
@@ -42,7 +72,15 @@ public:
 
     /// Add a message to thread queue.
     /// @param[in] data - thread specific information created on the heap using operator new.
-    void PostMsg(const UserData* data);
+    ///template<typename T>
+    void PostMsg(const Msg* data);
+
+    virtual void ProcessEvent(const ThreadMsg* incoming) {} // This will be implemented by 
+    //the instances of thread class
+
+    const char* getThreadName() {
+        return THREAD_NAME;
+    }
 
 private:
     WorkerThread(const WorkerThread&);
@@ -52,7 +90,8 @@ private:
     void Process();
 
     /// Entry point for timer thread
-    void TimerThread();
+    void TimerThread();       //TODO: This has to be a abstract method and implemented 
+    // while instantiating because not all the instances of threads may need timer?! 
 
     std::thread* m_thread;
     std::queue<ThreadMsg*> m_queue;
