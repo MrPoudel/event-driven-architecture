@@ -1,5 +1,5 @@
-#ifndef _CLASSA_H
-#define _CLASSA_H
+#ifndef _CLASSB_H
+#define _CLASSB_H
 
 //#include "AnyCallable.hpp"
 #include "Thread.hpp"
@@ -7,47 +7,49 @@
 #include <iostream>
 #include <functional>
 #include <map>
+#include "Fault.h"
 
 //struct ThreadMsg;
 using namespace std;
 using namespace std::placeholders; 
 
-typedef map<enum ClassAEventIds , std::function<void(int)>> EventMap;
+// Must use name space otherwise there will be a conflict in global variables
+typedef map<enum ClassBEventIds , std::function<void(int)>> EventMapB;
 
-enum class ClassAEventIds 
+enum class ClassBEventIds 
 { 
-  TASKA_MESSAGE_MIN               = INT16_MIN, 
-  TASKA_MESSAGE_TO_MQTT           = 0,
-  TASKA_MESSAGE_PRINT_LOG         = 1, 
-  TASKA_MESSAGE_MAIN_LOOP         = 2, 
-  TASKA_MESSAGE_MAX               = 3, 
+  TASKB_MESSAGE_MIN               = INT16_MIN, 
+  TASKB_MESSAGE_TO_MQTT           = 0,
+  TASKB_MESSAGE_PRINT_LOG         = 1, 
+  TASKB_MESSAGE_MAIN_ON_B         = 2, 
+  TASKB_MESSAGE_MAX               = 3, 
  };
 
 
 #pragma pack(push, 1) 
-struct UserDataA
+struct UserDataB
 {
 	std::string msg;
 	int year;
-  ClassAEventIds evId;
+  ClassBEventIds evId;
 };
 #pragma pack(pop)
 
-class A : public WorkerThread
+class B : public WorkerThread
 {
 
 private:
 
   vector<int> mData;// This is the data structure of entry event to the queue
-  // typedef map<enum class EventIds, AnyCallable<void>> EventMap;
-  //typedef map<int, AnyCallable<void>> EventMap;
+  // typedef map<enum class EventIds, AnyCallable<void>> EventMapB;
+  //typedef map<int, AnyCallable<void>> EventMapB;
   
-  static EventMap sEventHandlersList;  // This contains the list of handler functions which can be 
+  static EventMapB sEventHandlersList;  // This contains the list of handler functions which can be 
   // initialized at object init section.
 
 public:
 
-  A(const char* threadName) : WorkerThread::WorkerThread(threadName) 
+  B(const char* threadName) : WorkerThread::WorkerThread(threadName) 
   {
     Init();
   }
@@ -55,9 +57,7 @@ public:
   void Init() // Make a list of event handlers...for every new event and associated handlers add here.
   { 
     sEventHandlersList.insert(
-      { ClassAEventIds::TASKA_MESSAGE_PRINT_LOG, std::bind(&A::HandlePrintLogMessage, this, std::placeholders::_1)});
-       sEventHandlersList.insert(
-      { ClassAEventIds::TASKA_MESSAGE_MAIN_LOOP, std::bind(&A::MainLoop, this, std::placeholders::_1)});
+      { ClassBEventIds::TASKB_MESSAGE_PRINT_LOG, std::bind(&B::HandlePrintLogMessage, this, std::placeholders::_1)});
   }
 
   void MainLoop(int x)
@@ -69,7 +69,7 @@ public:
   void HandlePrintLogMessage(int x)
   {
     this_thread::sleep_for(50ms);
-    std::cout << "Handle print log message for thread A!" << std::endl;
+    std::cout << "Handle print log message for thread B!" << std::endl;
   }
 
   virtual void ProcessEvent(const ThreadMsg* incoming) override
@@ -78,14 +78,14 @@ public:
 
     auto userData = static_cast<const Msg*>(incoming->msg);  
 
-    const DataMsg<UserDataA> *test = static_cast<const DataMsg<UserDataA>*>(userData);
+    const DataMsg<UserDataB> *test = static_cast<const DataMsg<UserDataB>*>(userData);
 
     std::cout << test->getPayload().year << std::endl
               << test->getPayload().msg.c_str() << std::endl
               << static_cast<int>(test->getPayload().evId) << std::endl
               << "on :" << this->getThreadName() << std::endl;
 
-    ASSERT_TRUE((test->getPayload().evId >= ClassAEventIds::TASKA_MESSAGE_MIN) && (test->getPayload().evId < ClassAEventIds::TASKA_MESSAGE_MAX));
+    ASSERT_TRUE((test->getPayload().evId >= ClassBEventIds::TASKB_MESSAGE_MIN) && (test->getPayload().evId < ClassBEventIds::TASKB_MESSAGE_MAX));
 
     sEventHandlersList[test->getPayload().evId](21);
     delete userData; 
@@ -96,6 +96,6 @@ public:
 
 };
 
-EventMap A::sEventHandlersList; 
+EventMapB B::sEventHandlersList; 
 
 #endif 

@@ -7,7 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include "Event.h"
+//#include "Event.h"
 #include <map>
 #include <functional>
 
@@ -35,6 +35,7 @@ class DataMsg: public Msg {
 };
 
 enum class ClassAEventIds;
+enum class ClassBEventIds;
 
 #pragma pack(push, 1) 
 struct ThreadMsg
