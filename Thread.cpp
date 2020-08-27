@@ -63,8 +63,10 @@ void WorkerThread::Process()
         {
             // Wait for a message to be added to the queue
             std::unique_lock<std::mutex> lk(m_mutex);
-            while (m_queue.empty())
-                m_cv.wait(lk);
+            // while (m_queue.empty())
+            //     m_cv.wait(lk);
+
+            m_cv.wait(lk, [&] { return !m_queue.empty();});
 
             if (m_queue.empty())
                 continue;
@@ -82,7 +84,7 @@ void WorkerThread::Process()
             {          
 
                // Dispatch the message to corresponding thread instances!
-                ProcessEvent(msg);
+                ProcessUserEvent(msg);
 
                 // Delete dynamic data passed through message queue              
                 delete msg;
@@ -90,7 +92,9 @@ void WorkerThread::Process()
             }
 
             case MSG_TIMER:
-                cout << "Timer expired on " << THREAD_NAME << endl;
+               // cout << "Timer expired on " << THREAD_NAME << endl;
+
+                ProcessTimerEvent(msg);
                 // We can read the data from CAN bus here!
                 delete msg;
                 break;
@@ -160,7 +164,7 @@ void WorkerThread::TimerThread()
 	while (!m_timerExit)
 	{
 		// Sleep for 250ms then put a MSG_TIMER message into queue
-		std::this_thread::sleep_for(250ms);
+		std::this_thread::sleep_for(2000ms);
 
 		ThreadMsg* threadMsg = new ThreadMsg(MSG_TIMER, 0);
 

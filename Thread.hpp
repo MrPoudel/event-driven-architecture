@@ -10,9 +10,9 @@
 //#include "Event.h"
 #include <map>
 #include <functional>
+#include "Observer.hpp"
 
-// Message structure of all the working threads should be derived from the Base
-// Msg type! 
+// This is 
 class Msg {
   public:
      virtual ~Msg() {}
@@ -76,11 +76,33 @@ public:
     ///template<typename T>
     void PostMsg(const Msg* data);
 
-    virtual void ProcessEvent(const ThreadMsg* incoming) {} // This will be implemented by 
-    //the instances of thread class
+    virtual void ProcessUserEvent(const ThreadMsg* incoming) = 0;
+    virtual void ProcessTimerEvent(const ThreadMsg* incoming) = 0;
+     /**
+     * Register an observer
+     * @param observer the observer object to be registered
+     */
+    virtual void registerObserver(Observer *observer) {}
+
+    /**
+     * Unregister an observer
+     * @param observer the observer object to be unregistered
+     */
+    virtual void removeObserver(Observer *observer) {}
+
+    /**
+     * Notify all the registered observers when a change happens
+     */
+    virtual void notifyObservers() {}
+
 
     const char* getThreadName() {
         return THREAD_NAME;
+    }
+
+    void ExitTimer() {
+      m_timerExit = true;
+      std::cout << "Timer on " << THREAD_NAME << " is going to be off." << std::endl;
     }
 
 private:

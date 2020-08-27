@@ -9,9 +9,6 @@
 using namespace    std;
 
 // Worker thread instances
-// static WorkerThread workerThread1("WorkerThread1");
-// static WorkerThread workerThread2("WorkerThread2");
-
 static A threadA("Workerthread A");
 static B threadB("Workerthread B");
 
@@ -20,8 +17,6 @@ static void exitProgram(int32_t interruptSignal)
   std::cout <<"---------- Exiting Application ----------" << std::endl;
   std::cout <<"---------- Exiting Application ----------" << std::endl;
 
-  // workerThread1.ExitThread();
-  // workerThread2.ExitThread();
   threadA.ExitThread();
   threadB.ExitThread();
 
@@ -37,46 +32,31 @@ int main(void)
     std::cout <<"---------- Starting Application ----------" << std::endl;
 
     // Create worker threads
-    // workerThread1.CreateThread();
-    // workerThread2.CreateThread();
-
     threadA.CreateThread();
     threadB.CreateThread();
-    // Thread2 should process the can bus read and call the notifyObserver() method which 
-    // Forwards the values read from the CANBus to the WorkerThread2 --> Responsible for 
-    // the MQTT connectivity
 
-    // Events EventsA = new Events{ ID,}
-    //1. WorkerThread1.RegisterObserver(&workerThread2.);
-    //2. WorkerThread1.Events(&EventsA)
-    //3. WorkerThread1.EventHandlers(&EventhandlersA)
+    threadA.registerObserver(&threadB);  // threadB is the observer of threadA.
+    
+    // // Create message to send to worker thread 1
+    // UserDataA* userData1 = new UserDataA();
+    // userData1->msg = "Hello world";
+    // userData1->evId = ClassAEventIds::TASKA_MESSAGE_PRINT_LOG;
+    // DataMsg<UserDataA> *myData = new DataMsg<UserDataA>(userData1);
+    // threadA.PostMsg(myData);
 
-    // Create message to send to worker thread 1
-    UserDataA* userData1 = new UserDataA();
-    userData1->msg = "Hello world";
-    userData1->year = 2017;
-    userData1->evId = ClassAEventIds::TASKA_MESSAGE_PRINT_LOG; //TASKA_MESSAGE_MAIN_LOOP; //
+    // // Give time for messages processing on worker threads
+    // this_thread::sleep_for(1s);
 
-    DataMsg<UserDataA> *myData = new DataMsg<UserDataA>(userData1);
-
-    threadA.PostMsg(myData);
-
-    // Give time for messages processing on worker threads
-    this_thread::sleep_for(1s);
-
-
-
-    UserDataB* userData2 = new UserDataB();
-    userData2->msg = "Hello world";
-    userData2->year = 2017;
-    userData2->evId = ClassBEventIds::TASKB_MESSAGE_PRINT_LOG; //TASKA_MESSAGE_MAIN_LOOP; //
-
-    DataMsg<UserDataB> *myData2 = new DataMsg<UserDataB>(userData2);
-
-    threadB.PostMsg(myData2);
+    // UserDataB* userData2 = new UserDataB();
+    // userData2->msg = "Goodbye world"; 
+    // userData2->evId = ClassBEventIds::TASKB_MESSAGE_PRINT_LOG;
+    // DataMsg<UserDataB> *myData2 = new DataMsg<UserDataB>(userData2);
+    // threadB.PostMsg(myData2);
 
     // Give time for messages processing on worker threads
-    this_thread::sleep_for(1s);
+    this_thread::sleep_for(10s);
+    threadB.ExitTimer(); // By default every thread has one timer created
+    // Current we don't need timer for thread B, in future if we need we can activate it again.
     
     while(true); 
 

@@ -9,6 +9,8 @@
 #include <map>
 #include "Fault.h"
 
+#include "Observer.hpp" // This unit is client, it's function will be called at notification.
+
 //struct ThreadMsg;
 using namespace std;
 using namespace std::placeholders; 
@@ -22,7 +24,8 @@ enum class ClassBEventIds
   TASKB_MESSAGE_TO_MQTT           = 0,
   TASKB_MESSAGE_PRINT_LOG         = 1, 
   TASKB_MESSAGE_MAIN_ON_B         = 2, 
-  TASKB_MESSAGE_MAX               = 3, 
+  TASKB_MESSAGE_SEND_TO_MQTT      = 3,
+  TASKB_MESSAGE_MAX               = 4, 
  };
 
 
@@ -35,7 +38,7 @@ struct UserDataB
 };
 #pragma pack(pop)
 
-class B : public WorkerThread
+class B : public WorkerThread, public Observer
 {
 
 private:
@@ -58,6 +61,9 @@ public:
   { 
     sEventHandlersList.insert(
       { ClassBEventIds::TASKB_MESSAGE_PRINT_LOG, std::bind(&B::HandlePrintLogMessage, this, std::placeholders::_1)});
+    sEventHandlersList.insert(
+      { ClassBEventIds::TASKB_MESSAGE_SEND_TO_MQTT, std::bind(&B::HandleReadCANBusMessage, this)});
+
   }
 
   void MainLoop(int x)
@@ -72,7 +78,13 @@ public:
     std::cout << "Handle print log message for thread B!" << std::endl;
   }
 
-  virtual void ProcessEvent(const ThreadMsg* incoming) override
+  void HandleReadCANBusMessage()
+  {
+    this_thread::sleep_for(50ms);
+    std::cout << "I'm sending data to MQTT: THREAD B!" << std::endl;
+  }
+
+  virtual void ProcessUserEvent(const ThreadMsg* incoming) override
   { 
     ASSERT_TRUE(incoming->msg != NULL);
 
@@ -80,10 +92,9 @@ public:
 
     const DataMsg<UserDataB> *test = static_cast<const DataMsg<UserDataB>*>(userData);
 
-    std::cout << test->getPayload().year << std::endl
-              << test->getPayload().msg.c_str() << std::endl
-              << static_cast<int>(test->getPayload().evId) << std::endl
-              << "on :" << this->getThreadName() << std::endl;
+    // std::cout << test->getPayload().msg.c_str() << std::endl
+    //           << static_cast<int>(test->getPayload().evId) << std::endl
+    //           << "on :" << this->getThreadName() << std::endl;
 
     ASSERT_TRUE((test->getPayload().evId >= ClassBEventIds::TASKB_MESSAGE_MIN) && (test->getPayload().evId < ClassBEventIds::TASKB_MESSAGE_MAX));
 
@@ -92,6 +103,33 @@ public:
    
     // Implement Notify() to inform other threads...
     // For this we need a list of observers.
+  }
+
+  virtual void ProcessTimerEvent(const ThreadMsg* incoming) override
+  { 
+    // OK I will send the user event to read the CAN bus  
+
+    UserDataB* userData1 = new UserDataB();
+    userData1->msg = "SEND TO MQTT";
+    userData1->evId = ClassBEventIds::TASKB_MESSAGE_SEND_TO_MQTT; 
+
+    DataMsg<UserDataB> *myData = new DataMsg<UserDataB>(userData1);
+
+    this->PostMsg(myData);
+    // Implement Notify() to inform other threads...
+    // For this we need a list of observers.
+  }
+
+  virtual void update(ObseverMsg* data) override{
+    std::cout << "Data is uplopading to the cloud" << std::endl;
+
+    // Cast data back to the struct of type A
+    ObseverDataMsg<float> *test = static_cast<ObseverDataMsg<float>*>(data);
+    //std::cout << test->getPayload().msg.c_str() << std::endl
+
+    std::cout << test->getPayload() << std::endl;
+
+    delete data;
   }
 
 };

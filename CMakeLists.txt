@@ -19,7 +19,7 @@ find_package(Threads REQUIRED)
 # Release MinSizeRel
 set(CMAKE_BUILD_TYPE Debug)
 
-set(SRCS Fault.cpp Fault.h  Thread.cpp Thread.hpp ClassA.hpp ClassB.hpp)#AnyCallable.hpp)ClassA.hpp 
+set(SRCS Fault.cpp Fault.h  Thread.cpp Thread.hpp ClassA.hpp ClassB.hpp Observer.hpp)#AnyCallable.hpp)ClassA.hpp 
 
 add_library(lib ${SRCS})
 target_link_libraries(lib  ${CMAKE_THREAD_LIBS_INIT})

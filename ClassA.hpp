@@ -7,6 +7,7 @@
 #include <iostream>
 #include <functional>
 #include <map>
+#include <algorithm>
 
 //struct ThreadMsg;
 using namespace std;
@@ -20,7 +21,8 @@ enum class ClassAEventIds
   TASKA_MESSAGE_TO_MQTT           = 0,
   TASKA_MESSAGE_PRINT_LOG         = 1, 
   TASKA_MESSAGE_MAIN_LOOP         = 2, 
-  TASKA_MESSAGE_MAX               = 3, 
+  TASKA_MESSAGE_READ_CAN_BUS      = 3, 
+  TASKA_MESSAGE_MAX               = 4, 
  };
 
 
@@ -28,7 +30,6 @@ enum class ClassAEventIds
 struct UserDataA
 {
 	std::string msg;
-	int year;
   ClassAEventIds evId;
 };
 #pragma pack(pop)
@@ -39,8 +40,7 @@ class A : public WorkerThread
 private:
 
   vector<int> mData;// This is the data structure of entry event to the queue
-  // typedef map<enum class EventIds, AnyCallable<void>> EventMap;
-  //typedef map<int, AnyCallable<void>> EventMap;
+  std::vector<Observer *> observers; // observers
   
   static EventMap sEventHandlersList;  // This contains the list of handler functions which can be 
   // initialized at object init section.
@@ -56,8 +56,10 @@ public:
   { 
     sEventHandlersList.insert(
       { ClassAEventIds::TASKA_MESSAGE_PRINT_LOG, std::bind(&A::HandlePrintLogMessage, this, std::placeholders::_1)});
-       sEventHandlersList.insert(
+    sEventHandlersList.insert(
       { ClassAEventIds::TASKA_MESSAGE_MAIN_LOOP, std::bind(&A::MainLoop, this, std::placeholders::_1)});
+    sEventHandlersList.insert(
+      { ClassAEventIds::TASKA_MESSAGE_READ_CAN_BUS, std::bind(&A::HandleReadCANBusMessage, this)});
   }
 
   void MainLoop(int x)
@@ -72,7 +74,14 @@ public:
     std::cout << "Handle print log message for thread A!" << std::endl;
   }
 
-  virtual void ProcessEvent(const ThreadMsg* incoming) override
+  void HandleReadCANBusMessage()
+  {
+    this_thread::sleep_for(50ms);
+    std::cout << "I'm reading data from CAN BUS: THREAD A!" << std::endl;
+    notifyObservers();
+  }
+
+  virtual void ProcessUserEvent(const ThreadMsg* incoming) override
   { 
     ASSERT_TRUE(incoming->msg != NULL);
 
@@ -80,22 +89,56 @@ public:
 
     const DataMsg<UserDataA> *test = static_cast<const DataMsg<UserDataA>*>(userData);
 
-    std::cout << test->getPayload().year << std::endl
-              << test->getPayload().msg.c_str() << std::endl
-              << static_cast<int>(test->getPayload().evId) << std::endl
-              << "on :" << this->getThreadName() << std::endl;
+    // std::cout << test->getPayload().msg.c_str() << std::endl
+    //           << static_cast<int>(test->getPayload().evId) << std::endl
+    //           << "on :" << this->getThreadName() << std::endl;
 
     ASSERT_TRUE((test->getPayload().evId >= ClassAEventIds::TASKA_MESSAGE_MIN) && (test->getPayload().evId < ClassAEventIds::TASKA_MESSAGE_MAX));
 
     sEventHandlersList[test->getPayload().evId](21);
     delete userData; 
-   
+  }
+
+  virtual void ProcessTimerEvent(const ThreadMsg* incoming) override
+  { 
+    // OK I will send the user event to read the CAN bus  
+
+    UserDataA* userData1 = new UserDataA();
+    userData1->msg = "Read CAN BUS";
+    userData1->evId = ClassAEventIds::TASKA_MESSAGE_READ_CAN_BUS; 
+
+    DataMsg<UserDataA> *myData = new DataMsg<UserDataA>(userData1);
+
+    this->PostMsg(myData);
     // Implement Notify() to inform other threads...
     // For this we need a list of observers.
   }
 
+  void registerObserver(Observer *observer) {
+    observers.push_back(observer);
+}
+
+void removeObserver(Observer *observer) {
+    // find the observer
+    auto iterator = std::find(observers.begin(), observers.end(), observer);
+
+    if (iterator != observers.end()) { // observer found
+        observers.erase(iterator); // remove the observer
+    }
+}
+
+void notifyObservers() {
+
+    float* val = new float(56.93);
+    ObseverDataMsg<float> *data = new ObseverDataMsg<float>(val);
+    for (Observer *observer : observers) { // notify all observers
+        observer->update(data);
+    }
+}
+
 };
 
+// Definition for the static member!
 EventMap A::sEventHandlersList; 
 
 #endif 
