@@ -120,14 +120,20 @@ public:
     // For this we need a list of observers.
   }
 
-  virtual void update(ObseverMsg* data) override{
-    std::cout << "Data is uplopading to the cloud" << std::endl;
+  virtual void update(ObseverMsg* data) override{    
 
     // Cast data back to the struct of type A
     ObseverDataMsg<float> *test = static_cast<ObseverDataMsg<float>*>(data);
     //std::cout << test->getPayload().msg.c_str() << std::endl
 
-    std::cout << test->getPayload() << std::endl;
+    std::cout << this->getThreadName() 
+              << ":"
+              << "Data is uplopading to the cloud: notified from WorkerThread A!" 
+              << std::endl
+              << "Data val: " 
+              << test->getPayload() 
+              << std::endl
+              << std::endl;
 
     delete data;
   }

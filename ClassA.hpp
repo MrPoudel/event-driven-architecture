@@ -8,6 +8,7 @@
 #include <functional>
 #include <map>
 #include <algorithm>
+#include "Fault.h"
 
 //struct ThreadMsg;
 using namespace std;
@@ -77,7 +78,13 @@ public:
   void HandleReadCANBusMessage()
   {
     this_thread::sleep_for(50ms);
-    std::cout << "I'm reading data from CAN BUS: THREAD A!" << std::endl;
+
+    std::cout << this->getThreadName() 
+              << ":"
+              << "Reading data from CAN BUS: Will notify to observers!" 
+              << std::endl
+              << std::endl;
+
     notifyObservers();
   }
 

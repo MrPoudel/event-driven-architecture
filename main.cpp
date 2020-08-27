@@ -54,7 +54,8 @@ int main(void)
     // threadB.PostMsg(myData2);
 
     // Give time for messages processing on worker threads
-    this_thread::sleep_for(10s);
+    this_thread::sleep_for(5s); // If you don't do delay then the thread loop will overright the 
+    //value
     threadB.ExitTimer(); // By default every thread has one timer created
     // Current we don't need timer for thread B, in future if we need we can activate it again.
     
