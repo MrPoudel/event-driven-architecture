@@ -1,12 +1,20 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.9) # C++17 is supported by versin > 3.8
 
 project(test)
 
-set(CMAKE_CXX_STANDARD 17)
-add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+# Including custom cmake rules
+include(clang-cxx-dev-tools)
+
+set(CMAKE_CXX_STANDARD 11)
+#add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# clangformat_setup(
+#   main.cpp
+# )
 
 find_package(Threads REQUIRED)
 
@@ -24,5 +32,9 @@ set(SRCS Fault.cpp Fault.h  Thread.cpp Thread.hpp ClassA.hpp ClassB.hpp Observer
 add_library(lib ${SRCS})
 target_link_libraries(lib  ${CMAKE_THREAD_LIBS_INIT})
 
+add_subdirectory(paho.mqtt.cpp)
+
 add_executable(test main.cpp)
-target_link_libraries(test lib)
+target_link_libraries(test lib paho-mqttpp3)
+#target_compile_features(test PRIVATE cxx_std_17)
+#set_property(TARGET test PROPERTY CXX_STANDARD 11)
