@@ -60,7 +60,8 @@ main(void) {
     // threadB.PostMsg(myData2);
 
     // Give time for messages processing on worker threads
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000)); // Allow some delay before exiting timer
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(5000));  // Allow some delay before exiting timer
 
     threadB.ExitTimer();  // By default every thread has one timer created
     // Current we don't need timer for thread B, in future if we need we can

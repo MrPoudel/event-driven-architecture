@@ -2,15 +2,15 @@
 #ifndef THREAD_H_
 #define THREAD_H_
 
+#include "Observer.hpp"
 #include <atomic>
 #include <condition_variable>
+#include <functional>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <queue>
 #include <thread>
-#include "Observer.hpp"
-#include <functional>
-#include <map>
 
 // This is
 class Msg {
